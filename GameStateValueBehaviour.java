@@ -30,8 +30,8 @@ public class GameStateValueBehaviour extends Behaviour {
 	/*public GameStateValueBehaviour(FeatureVector vector) {
 		this.weights = vector;
 	}*/
-
-	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+//	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
 
 	private IGameStateHeuristic heuristic;
 	private FeatureVector featureVector;
@@ -121,10 +121,10 @@ public class GameStateValueBehaviour extends Behaviour {
 		GameAction fourthAction = validActions.get(0);
 		GameAction fifthAction = validActions.get(0);
 		double bestScore = Double.NEGATIVE_INFINITY;
-		double secondOption = Double.NEGATIVE_INFINITY;
-		double thirdOption = Double.NEGATIVE_INFINITY;
-		double fourthOption = Double.NEGATIVE_INFINITY;
-		double fifthOption = Double.NEGATIVE_INFINITY;
+		double secondScore = Double.NEGATIVE_INFINITY;
+		double thirdScore = Double.NEGATIVE_INFINITY;
+		double fourthScore = Double.NEGATIVE_INFINITY;
+		double fifthScore = Double.NEGATIVE_INFINITY;
 
 		for (GameAction gameAction : validActions) {
 			double score = alphaBeta(context, player.getId(), gameAction, depth);
@@ -134,11 +134,29 @@ public class GameStateValueBehaviour extends Behaviour {
 				thirdAction = secondAction;
 				secondAction = bestAction;
 				bestAction = gameAction;
-				fifthOption = fourthOption;
-				fourthOption = thirdOption;
-				thirdOption = secondOption;
-				secondOption = bestScore;
+				fifthScore = fourthScore;
+				fourthScore = thirdScore;
+				thirdScore = secondScore;
+				secondScore = bestScore;
 				bestScore = score;
+			}
+			else if(score > secondOption && score <= bestScore){
+				fifthAction = fourthAction;
+				fourthAction = thirdAction;
+				thirdAction = secondAction;
+				secondAction = score;
+			}
+			else if(score > thirdOption && score <= secondScore){
+				fifthAction = fourthAction;
+				fourthAction = thirdAction;
+				thirdAction = score;
+			}
+			else if(score > fourthOption && score <= thirdScore){
+				fifthAction = fourthAction;
+				fourthAction = score;
+			}
+			else if(score > fifthOption && score <= fifthScore){
+				fifthAction = score;
 			}
 		}
 
