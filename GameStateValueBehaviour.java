@@ -31,7 +31,7 @@ public class GameStateValueBehaviour extends Behaviour {
 		this.weights = vector;
 	}*/
 
-	private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
 
 	private IGameStateHeuristic heuristic;
 	private FeatureVector featureVector;
@@ -116,18 +116,38 @@ public class GameStateValueBehaviour extends Behaviour {
 		}
 
 		GameAction bestAction = validActions.get(0);
+		GameAction secondAction = validActions.get(0);
+		GameAction thirdAction = validActions.get(0);
+		GameAction fourthAction = validActions.get(0);
+		GameAction fifthAction = validActions.get(0);
 		double bestScore = Double.NEGATIVE_INFINITY;
+		double secondOption = Double.NEGATIVE_INFINITY;
+		double thirdOption = Double.NEGATIVE_INFINITY;
+		double fourthOption = Double.NEGATIVE_INFINITY;
+		double fifthOption = Double.NEGATIVE_INFINITY;
 
 		for (GameAction gameAction : validActions) {
 			double score = alphaBeta(context, player.getId(), gameAction, depth);
 			if (score > bestScore) {
+				fifthAction = fourthAction;
+				fourthAction = thirdAction;
+				thirdAction = secondAction;
+				secondAction = bestAction;
 				bestAction = gameAction;
+				fifthOption = fourthOption;
+				fourthOption = thirdOption;
+				thirdOption = secondOption;
+				secondOption = bestScore;
 				bestScore = score;
 			}
 		}
 
 
 		logger.info("Selecting best action {} with score {}\n", bestAction, bestScore);
+		logger.info("Alternative action 1 {} with score {}\n", secondAction, secondOption);
+		logger.info("Alternative action 2 {} with score {}\n", thirdAction, thirdOption);
+		logger.info("Alternative action 3 {} with score {}\n", fourthAction, fourthOption);
+		logger.info("Alternative action 4 {} with score {}\n", fifthAction, fifthOption);
 		return bestAction;
 	}
 
