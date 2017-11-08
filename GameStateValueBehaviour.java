@@ -23,159 +23,190 @@ import net.demilich.metastone.game.entities.heroes.Hero;
 import net.demilich.metastone.game.entities.heroes.HeroClass;
 import net.demilich.metastone.game.entities.minions.Minion;
 
-public class GameStateValueBehaviour extends Behaviour {
+import java.lang.*;
+import java.io.*;
+import java.net.*;
 
-		//private final FeatureVector weights;
-
-	/*public GameStateValueBehaviour(FeatureVector vector) {
-		this.weights = vector;
-	}*/
-	private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
-//	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
-
-	private IGameStateHeuristic heuristic;
-	private FeatureVector featureVector;
-	private String nameSuffix = "";
-
-
-	public GameStateValueBehaviour() {	
-	}
-
+class Server{
+	public class GameStateValueBehaviour extends Behaviour {
 	
-
-	public GameStateValueBehaviour(FeatureVector featureVector, String nameSuffix) {
-		this.featureVector = featureVector;
-		this.nameSuffix = nameSuffix;
-		this.heuristic = new ThreatBasedHeuristic(featureVector);
-	}
-
-	private double alphaBeta(GameContext context, int playerId, GameAction action, int depth) {
-		GameContext simulation = context.clone();
-		simulation.getLogic().performGameAction(playerId, action);
-		if (depth == 0 || simulation.getActivePlayerId() != playerId || simulation.gameDecided()) {
-			return heuristic.getScore(simulation, playerId);
+			//private final FeatureVector weights;
+	
+		/*public GameStateValueBehaviour(FeatureVector vector) {
+			this.weights = vector;
+		}*/
+		private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	//	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	
+		private IGameStateHeuristic heuristic;
+		private FeatureVector featureVector;
+		private String nameSuffix = "";
+	
+	
+		public GameStateValueBehaviour() {	
 		}
-
-		List<GameAction> validActions = simulation.getValidActions();
-
-		double score = Float.NEGATIVE_INFINITY;
-
-		for (GameAction gameAction : validActions) {
-			score = Math.max(score, alphaBeta(simulation, playerId, gameAction, depth - 1));
-			if (score >= 100000) {
-				break;
+	
+		
+	
+		public GameStateValueBehaviour(FeatureVector featureVector, String nameSuffix) {
+			this.featureVector = featureVector;
+			this.nameSuffix = nameSuffix;
+			this.heuristic = new ThreatBasedHeuristic(featureVector);
+		}
+	
+		private double alphaBeta(GameContext context, int playerId, GameAction action, int depth) {
+			GameContext simulation = context.clone();
+			simulation.getLogic().performGameAction(playerId, action);
+			if (depth == 0 || simulation.getActivePlayerId() != playerId || simulation.gameDecided()) {
+				return heuristic.getScore(simulation, playerId);
 			}
-		}
-
-		return score;
-	}
-
-	private void answerTrainingData(TrainingData trainingData) {
-		featureVector = trainingData != null ? trainingData.getFeatureVector() : FeatureVector.getFittest();
-		heuristic = new ThreatBasedHeuristic(featureVector);
-		nameSuffix = trainingData != null ? "(trained)" : "(untrained)";
-	}
-
-	@Override
-	public IBehaviour clone() {
-		if (featureVector != null) {
-			return new GameStateValueBehaviour(featureVector.clone(), nameSuffix);
-		}
-		return new GameStateValueBehaviour();
-	}
-
-	@Override
-	public String getName() {
-		return "Game state value " + nameSuffix;
-	}
-
-	@Override
-	public List<Card> mulligan(GameContext context, Player player, List<Card> cards) {
-		requestTrainingData(player);
-		List<Card> discardedCards = new ArrayList<Card>();
-		for (Card card : cards) {
-			if (card.getBaseManaCost() > 3) {
-				discardedCards.add(card);
+	
+			List<GameAction> validActions = simulation.getValidActions();
+	
+			double score = Float.NEGATIVE_INFINITY;
+	
+			for (GameAction gameAction : validActions) {
+				score = Math.max(score, alphaBeta(simulation, playerId, gameAction, depth - 1));
+				if (score >= 100000) {
+					break;
+				}
 			}
+	
+			return score;
 		}
-		return discardedCards;
+	
+		private void answerTrainingData(TrainingData trainingData) {
+			featureVector = trainingData != null ? trainingData.getFeatureVector() : FeatureVector.getFittest();
+			heuristic = new ThreatBasedHeuristic(featureVector);
+			nameSuffix = trainingData != null ? "(trained)" : "(untrained)";
+		}
+	
+		@Override
+		public IBehaviour clone() {
+			if (featureVector != null) {
+				return new GameStateValueBehaviour(featureVector.clone(), nameSuffix);
+			}
+			return new GameStateValueBehaviour();
+		}
+	
+		@Override
+		public String getName() {
+			return "Game state value " + nameSuffix;
+		}
+	
+		@Override
+		public List<Card> mulligan(GameContext context, Player player, List<Card> cards) {
+			requestTrainingData(player);
+			List<Card> discardedCards = new ArrayList<Card>();
+			for (Card card : cards) {
+				if (card.getBaseManaCost() > 3) {
+					discardedCards.add(card);
+				}
+			}
+			return discardedCards;
+		}
+	
+		@Override
+		public GameAction requestAction(GameContext context, Player player, List<GameAction> validActions) {
+			if (validActions.size() == 1) {
+				return validActions.get(0);
+			}
+	
+			int depth = 2;
+			// when evaluating battlecry and discover actions, only optimize the immediate value
+			if (validActions.get(0).getActionType() == ActionType.BATTLECRY) {
+				depth = 0;
+			} else if (validActions.get(0).getActionType() == ActionType.DISCOVER) {
+				return validActions.get(0);
+			}
+	
+			GameAction bestAction = validActions.get(0);
+			GameAction secondAction = validActions.get(0);
+			GameAction thirdAction = validActions.get(0);
+			GameAction fourthAction = validActions.get(0);
+			GameAction fifthAction = validActions.get(0);
+			double bestScore = Double.NEGATIVE_INFINITY;
+			double secondScore = Double.NEGATIVE_INFINITY;
+			double thirdScore = Double.NEGATIVE_INFINITY;
+			double fourthScore = Double.NEGATIVE_INFINITY;
+			double fifthScore = Double.NEGATIVE_INFINITY;
+	
+			for (GameAction gameAction : validActions) {
+				double score = alphaBeta(context, player.getId(), gameAction, depth);
+				if (score > bestScore) {
+					fifthAction = fourthAction;
+					fourthAction = thirdAction;
+					thirdAction = secondAction;
+					secondAction = bestAction;
+					bestAction = gameAction;
+					fifthScore = fourthScore;
+					fourthScore = thirdScore;
+					thirdScore = secondScore;
+					secondScore = bestScore;
+					bestScore = score;
+				}
+				else if(score > secondOption && score <= bestScore){
+					fifthAction = fourthAction;
+					fourthAction = thirdAction;
+					thirdAction = secondAction;
+					secondAction = gameAction;
+					fifthScore = fourthScore;
+					fourthScore = thirdScore;
+					thirdScore = secondScore;
+					secondScore = score;
+				}
+				else if(score > thirdOption && score <= secondScore){
+					fifthAction = fourthAction;
+					fourthAction = thirdAction;
+					thirdAction = gameAction;
+					fifthScore = fourthScore;
+					fourthScore = thirdScore;
+					thirdScore = score;
+				}
+				else if(score > fourthOption && score <= thirdScore){
+					fifthAction = fourthAction;
+					fourthAction = gameAction;
+					fifthScore = fourthScore;
+					fourthScore = score;
+				}
+				else if(score > fifthOption && score <= fifthScore){
+					fifthAction = gameAction;
+					fifthScore = score;
+				}
+			}
+	
+	
+			logger.info("Selecting best action {} with score {}\n", bestAction, bestScore);
+			logger.info("Alternative action 1 {} with score {}\n", secondAction, secondOption);
+			logger.info("Alternative action 2 {} with score {}\n", thirdAction, thirdOption);
+			logger.info("Alternative action 3 {} with score {}\n", fourthAction, fourthOption);
+			logger.info("Alternative action 4 {} with score {}\n", fifthAction, fifthOption);
+			
+			try{
+				ServerSocket srvr = new ServerSocket(1234);
+				Socket skt = srvr.accept();
+				System.out.print("Server has connected!\n");
+				PrintWriter out = new PrintWriter(skt.getOutputStream(),true);
+				out.print(bestAction);
+				out.close();
+				skt.close();
+				srvr.close();
+			}
+			catch(Exception e){
+				System.out.print("Error\n");
+			}
+	
+			return bestAction;
+		}
+	
+		private void requestTrainingData(Player player) {
+			if (heuristic != null) {
+				return;
+			}
+	
+			RequestTrainingDataNotification request = new RequestTrainingDataNotification(player.getDeckName(), this::answerTrainingData);
+			NotificationProxy.notifyObservers(request);
+		}
+	
 	}
-
-	@Override
-	public GameAction requestAction(GameContext context, Player player, List<GameAction> validActions) {
-		if (validActions.size() == 1) {
-			return validActions.get(0);
-		}
-
-		int depth = 2;
-		// when evaluating battlecry and discover actions, only optimize the immediate value
-		if (validActions.get(0).getActionType() == ActionType.BATTLECRY) {
-			depth = 0;
-		} else if (validActions.get(0).getActionType() == ActionType.DISCOVER) {
-			return validActions.get(0);
-		}
-
-		GameAction bestAction = validActions.get(0);
-		GameAction secondAction = validActions.get(0);
-		GameAction thirdAction = validActions.get(0);
-		GameAction fourthAction = validActions.get(0);
-		GameAction fifthAction = validActions.get(0);
-		double bestScore = Double.NEGATIVE_INFINITY;
-		double secondScore = Double.NEGATIVE_INFINITY;
-		double thirdScore = Double.NEGATIVE_INFINITY;
-		double fourthScore = Double.NEGATIVE_INFINITY;
-		double fifthScore = Double.NEGATIVE_INFINITY;
-
-		for (GameAction gameAction : validActions) {
-			double score = alphaBeta(context, player.getId(), gameAction, depth);
-			if (score > bestScore) {
-				fifthAction = fourthAction;
-				fourthAction = thirdAction;
-				thirdAction = secondAction;
-				secondAction = bestAction;
-				bestAction = gameAction;
-				fifthScore = fourthScore;
-				fourthScore = thirdScore;
-				thirdScore = secondScore;
-				secondScore = bestScore;
-				bestScore = score;
-			}
-			else if(score > secondOption && score <= bestScore){
-				fifthAction = fourthAction;
-				fourthAction = thirdAction;
-				thirdAction = secondAction;
-				secondAction = score;
-			}
-			else if(score > thirdOption && score <= secondScore){
-				fifthAction = fourthAction;
-				fourthAction = thirdAction;
-				thirdAction = score;
-			}
-			else if(score > fourthOption && score <= thirdScore){
-				fifthAction = fourthAction;
-				fourthAction = score;
-			}
-			else if(score > fifthOption && score <= fifthScore){
-				fifthAction = score;
-			}
-		}
-
-
-		logger.info("Selecting best action {} with score {}\n", bestAction, bestScore);
-		logger.info("Alternative action 1 {} with score {}\n", secondAction, secondOption);
-		logger.info("Alternative action 2 {} with score {}\n", thirdAction, thirdOption);
-		logger.info("Alternative action 3 {} with score {}\n", fourthAction, fourthOption);
-		logger.info("Alternative action 4 {} with score {}\n", fifthAction, fifthOption);
-		return bestAction;
-	}
-
-	private void requestTrainingData(Player player) {
-		if (heuristic != null) {
-			return;
-		}
-
-		RequestTrainingDataNotification request = new RequestTrainingDataNotification(player.getDeckName(), this::answerTrainingData);
-		NotificationProxy.notifyObservers(request);
-	}
-
 }
