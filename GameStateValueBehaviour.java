@@ -39,8 +39,15 @@ import net.demilich.metastone.game.cards.MinionCard;
 //human controlled part
 import net.demilich.metastone.BuildConfig;
 import net.demilich.metastone.GameNotification;
+<<<<<<< HEAD
 import net.demilich.metastone.game.behaviour.human.HumanActionOptions;
 import net.demilich.metastone.game.actions.IActionSelectionListener;
+=======
+//import net.demilich.metastone.game.behaviour.human.HumanActionOptions;
+import net.demilich.metastone.game.behaviour.human.*;
+import net.demilich.metastone.game.actions.IActionSelectionListener;
+//import net.demilich.metastone.game.behaviour.human.HumanBehavior;
+>>>>>>> 1cb91844ae24d959e9c400854ab882385028501c
 
 import java.lang.*;
 import java.io.*;
@@ -48,6 +55,7 @@ import java.net.*;
 
 
 
+<<<<<<< HEAD
 
 //class Server{
 	public class GameStateValueBehaviour extends Behaviour{
@@ -150,6 +158,120 @@ import java.net.*;
 			GameAction fifthAction = validActions.get(1);
 			GameAction selectedAction;
 
+=======
+
+//class Server{
+	public class GameStateValueBehaviour extends Behaviour{
+	
+			//private final FeatureVector weights;
+	
+		//public GameStateValueBehaviour(FeatureVector vector) {
+			//	this.weights = vector;
+		//}
+		private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	//	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
+	
+		private static IGameStateHeuristic heuristic;
+		private FeatureVector featureVector;
+		private String nameSuffix = "";
+		private boolean waitingForInput;
+	
+	
+		public GameStateValueBehaviour() {	
+		}
+	
+		
+	
+		public GameStateValueBehaviour(FeatureVector featureVector, String nameSuffix) {
+			this.featureVector = featureVector;
+			this.nameSuffix = nameSuffix;
+			this.heuristic = new ThreatBasedHeuristic(featureVector);
+		}
+	
+		public static double alphaBeta(GameContext context, int playerId, GameAction action, int depth) {
+			GameContext simulation = context.clone();
+			simulation.getLogic().performGameAction(playerId, action);
+			if (depth == 0 || simulation.getActivePlayerId() != playerId || simulation.gameDecided()) {
+				return heuristic.getScore(simulation, playerId);
+			}
+	
+			List<GameAction> validActions = simulation.getValidActions();
+	
+			double score = Float.NEGATIVE_INFINITY;
+	
+			for (GameAction gameAction : validActions) {
+				score = Math.max(score, alphaBeta(simulation, playerId, gameAction, depth - 1));
+				if (score >= 100000) {
+					break;
+				}
+			}
+	
+			return score;
+		}
+	
+		private void answerTrainingData(TrainingData trainingData) {
+			featureVector = trainingData != null ? trainingData.getFeatureVector() : FeatureVector.getFittest();
+			heuristic = new ThreatBasedHeuristic(featureVector);
+			nameSuffix = trainingData != null ? "(trained)" : "(untrained)";
+		}
+	
+		@Override
+		public IBehaviour clone() {
+			if (featureVector != null) {
+				return new GameStateValueBehaviour(featureVector.clone(), nameSuffix);
+			}
+			return new GameStateValueBehaviour();
+		}
+	
+		@Override
+		public String getName() {
+			return "Game state value (human controlled) " + nameSuffix;
+		}
+	
+		@Override
+		public List<Card> mulligan(GameContext context, Player player, List<Card> cards) {
+			requestTrainingData(player);
+			List<Card> discardedCards = new ArrayList<Card>();
+			for (Card card : cards) {
+				if (card.getBaseManaCost() > 3) {
+					discardedCards.add(card);
+				}
+			}
+			return discardedCards;
+		}
+	
+		@Override
+		public GameAction requestAction(GameContext context, Player player, List<GameAction> validActions) {
+			if (validActions.size() == 1) {
+				return validActions.get(0);
+			}
+	
+			int depth = 2;
+			// when evaluating battlecry and discover actions, only optimize the immediate value
+			if (validActions.get(0).getActionType() == ActionType.BATTLECRY) {
+				depth = 0;
+			} else if (validActions.get(0).getActionType() == ActionType.DISCOVER) {
+				return validActions.get(0);
+			}
+	
+			GameAction bestAction = validActions.get(0); //these were all 0
+			
+		double bestScore = Double.NEGATIVE_INFINITY;
+
+		for (GameAction gameAction : validActions) {
+			double score = alphaBeta(context, player.getId(), gameAction, depth);
+			if (score > bestScore) {
+				bestAction = gameAction;
+				bestScore = score;
+			}
+		}
+		/*	GameAction secondAction = validActions.get(1);
+			GameAction thirdAction = validActions.get(1);
+			GameAction fourthAction = validActions.get(1);
+			GameAction fifthAction = validActions.get(1);
+			GameAction selectedAction;
+
+>>>>>>> 1cb91844ae24d959e9c400854ab882385028501c
 			double bestScore = Double.NEGATIVE_INFINITY;
 			double secondScore = Double.NEGATIVE_INFINITY;
 			double thirdScore = Double.NEGATIVE_INFINITY;
@@ -210,6 +332,7 @@ import java.net.*;
 					fifthAction = gameAction;
 					fifthScore = score;
 				}
+<<<<<<< HEAD
 			}
 
 			System.out.println("Best action is " + bestAction + "\n");
@@ -271,6 +394,72 @@ import java.net.*;
 			/*waitingForInput = true;
 			HumanActionOptions options = new HumanActionOptions(this, context, player, validActions);
 			NotificationProxy.sendNotification(GameNotification.HUMAN_PROMPT_FOR_ACTION);
+=======
+			}*/
+
+			/*System.out.println("Best action is " + bestAction + "\n");
+			printExplanation(context,player,bestAction);
+			System.out.println("Alternative action 1 is " + secondAction + "\n");
+			printExplanation(context,player,secondAction);
+			System.out.println("Alternative action 2 is " + thirdAction + "\n");
+			printExplanation(context,player,thirdAction);
+			System.out.println("Alternative action 3 is " + fourthAction + "\n");
+			printExplanation(context,player,fourthAction);
+			System.out.println("Alternative action 4 is " + fifthAction + "\n");
+			printExplanation(context,player,fifthAction);*/
+
+		
+			
+		/*	if(bestAction.isSameActionGroup(secondAction)){
+			System.out.println("secondAction is in the same action group as bestAction");
+			}
+			else{
+			System.out.println("secondAction is in a different action group as bestAction");
+			}
+			if(bestAction.isSameActionGroup(thirdAction)){
+			System.out.println("thirdAction is in the same action group as bestAction");
+			}
+			else{
+			System.out.println("thirdAction is in a different action group as bestAction");
+			}
+			if(bestAction.isSameActionGroup(fourthAction)){
+			System.out.println("fourthAction is in the same action group as bestAction");
+			}
+			else{
+			System.out.println("fourthAction is in a different action group as bestAction");
+			}
+			if(bestAction.isSameActionGroup(fifthAction)){
+			System.out.println("fifthAction is in the same action group as bestAction");
+			}
+			else{
+			System.out.println("fifthAction is in a different action group as bestAction" + "\n");
+			}*/
+
+			
+		
+
+			try{
+				ServerSocket srvr = new ServerSocket(5555);
+				Socket skt = srvr.accept();
+				System.out.print("Server has connected!\n");
+				PrintWriter out = new PrintWriter(skt.getOutputStream(),true);
+				out.print(bestAction);
+				out.close();
+				skt.close();
+				srvr.close();
+			}
+			catch(Exception e){
+				//System.out.print("Error\n");
+			}
+	
+			return bestAction;
+
+			//HumanBehavior behavior;
+
+			/*waitingForInput = true;
+			HumanActionOptions options = new HumanActionOptions(this, context, player, validActions);
+			NotificationProxy.sendNotification(GameNotification.HUMAN_PROMPT_FOR_ACTION,options);
+>>>>>>> 1cb91844ae24d959e9c400854ab882385028501c
 			while (waitingForInput) {
 				try {
 					Thread.sleep(BuildConfig.DEFAULT_SLEEP_DELAY);
@@ -326,6 +515,7 @@ import java.net.*;
 			if(card.getAttributeValue(Attribute.HP) > 3 && card.getAttributeValue(Attribute.ATTACK) > 3 && card.getManaCost(context,player) < 5){ //need to add and no attribute
 				System.out.println("This card has a decent HP / Attack for it's mana cost, but has no other special effects. This will provide some pressure on the board");
 			}
+<<<<<<< HEAD
 
 			if(remainingHp < 10 && card.getAttributeValue(Attribute.TAUNT) == 1){
 				System.out.println("Protecting your HP is currently a priority and taunt minions are great for protecting this resource");
@@ -414,6 +604,96 @@ import java.net.*;
 				//do whatever
 			}
 
+=======
+
+			if(remainingHp < 10 && card.getAttributeValue(Attribute.TAUNT) == 1){
+				System.out.println("Protecting your HP is currently a priority and taunt minions are great for protecting this resource");
+			}
+			if(opponentHp < 10 && card.getAttributeValue(Attribute.CHARGE) == 1){
+				System.out.println("You have pressure on the board right now, and Charge minions are great for maintaining that tempo lead");
+			}
+			if(remainingHp < 10 && card.getAttributeValue(Attribute.DIVINE_SHIELD) == 1){
+				System.out.println("HP is a priority right now and divine shield minions are great for protecting this resource");
+			}
+			if(remainingHp > 15 && card.getAttributeValue(Attribute.STEALTH) == 1){
+				System.out.println("Stealth minions are good for making patient plays, and you have the HP to allow you to wait");
+			}
+			if(opponentMinions > playerMinions){ //opponent minion advantage cases
+				if(card.getAttributeValue(Attribute.CHARGE) == 1){
+					System.out.println("The opponent has more pressure on the board right now. Use a charge minion to help clear some minions from the board and alleviate pressure");
+				}
+				if(card.getAttributeValue(Attribute.WINDFURY) == 1){
+					System.out.println("The opponent has more pressure on the board right now. Use a windfury minion to help clear some minions from the board and alleviate pressure");
+				}
+				if(card.getAttributeValue(Attribute.FROZEN) == 1){ //Not sure if this is right attribute
+					System.out.println("The opponent has more pressure on the board right now. Freeze some of your opponent’s minions in order to buy yourself some time");
+				}
+				if(card.getAttributeValue(Attribute.SILENCED) == 1){
+					System.out.println("The opponent has more pressure on the board right now. Silence some of your opponent’s minions or order to buy yourself some time");
+				}
+				if(card.getAttributeValue(Attribute.SPELL_DAMAGE) == 1){ //not sure if right, maybe spell_damage_multiplier
+					System.out.println("Your spells are stronger now. Use a spell card to clear minions from the field and alleviate pressure, or hit your opponent’s HP directly if it is low to gain tempo advantage");
+				}
+			}
+			if(card.getAttributeValue(Attribute.BATTLECRY) == 1){
+				System.out.println("If you have a return effect card, you can combo it with this card to send it back to your hand! This will let you re-activate your battlecry minion’s effect again");
+			}
+			if(card.getAttributeValue(Attribute.ARMOR) == 1 && remainingHp < 10){
+				System.out.println("Your HP is low. Play this card to help strengthen your defenses");
+			}
+			if((card.getAttributeValue(Attribute.IMMUNE) == 1 || card.getAttributeValue(Attribute.IMMUNE_HERO) == 1) && remainingHp < 10){
+				System.out.println("Your HP is low. Play this card to help strengthen your defenses");
+			}
+			if(card.getAttributeValue(Attribute.OVERLOAD) == 1 && opponentMinions > playerMinions){
+				System.out.println("Use this card to summon surprisingly strong minions, allowing you to destroy your opponent’s minions and regain tempo");
+			}
+			if(card.getAttributeValue(Attribute.DECK_TRIGGER) == 1 && (opponentHp > remainingHp || opponentMinions > playerMinions)){
+				System.out.println("Your opponent has the advantage right now. Play this card to re-gain some tempo, at the cost of discarding some cards");
+			}
+			if(card.getAttributeValue(Attribute.HEAL_AMPLIFY_MULTIPLIER) == 1 && remainingHp < 10){ //is this the right attribute?
+				System.out.println("Your HP is low. Summon this card to quickly gain some HP back");
+			}
+			if(card.getAttributeValue(Attribute.MANA_COST_MODIFIER) == 1){
+				System.out.println("This card will spend all of your mana in exchange for added attack power. Calculate how much mana you can afford to sink into this effect before playing this card!");
+			}
+
+			}
+
+			if(action.getActionType() == ActionType.END_TURN){
+				System.out.println("There are no advantageous moves left. You should end your turn");
+			}
+
+			if(action.getActionType() == ActionType.PHYSICAL_ATTACK){
+				System.out.println("Move is a physical attack");
+				if(opponentMinions > playerMinions){
+					System.out.println("Use this attack on an opponents minion to try and gain some board advantage");
+				}
+				if(opponentHp > remainingHp && opponentMinions < 3){
+					System.out.println("The opponent has an HP advantage and not many minions on the board. Use this attack to try and regain an HP advantage");
+				}
+				if(opponentHp < remainingHp && opponentMinions < 3){
+					System.out.println("The opponent has an HP disadvantage and not many minions on the board. Using this attack on opponents minions or hero would be equally advantageous");
+				}
+
+			}
+			if(action.getActionType() == ActionType.SPELL){
+			GameAction test = action;
+			Card card = null;
+			PlayCardAction playCardAction = null;
+			playCardAction = (PlayCardAction) test;
+			card = context.resolveCardReference(playCardAction.getCardReference());
+			System.out.println("card is: " + card.getName() + "**********");
+			System.out.println("attributes are: " +card.getAttributes());
+			}
+
+			if(action.getActionType() == ActionType.HERO_POWER){
+				//do whatever
+			}
+			if(action.getActionType() == ActionType.EQUIP_WEAPON){
+				//do whatever
+			}
+
+>>>>>>> 1cb91844ae24d959e9c400854ab882385028501c
 		}
 	
 		private void requestTrainingData(Player player) {
