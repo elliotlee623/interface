@@ -39,8 +39,10 @@ import net.demilich.metastone.game.cards.MinionCard;
 //human controlled part
 import net.demilich.metastone.BuildConfig;
 import net.demilich.metastone.GameNotification;
-import net.demilich.metastone.game.behaviour.human.HumanActionOptions;
+//import net.demilich.metastone.game.behaviour.human.HumanActionOptions;
+import net.demilich.metastone.game.behaviour.human.*;
 import net.demilich.metastone.game.actions.IActionSelectionListener;
+//import net.demilich.metastone.game.behaviour.human.HumanBehavior;
 
 import java.lang.*;
 import java.io.*;
@@ -60,7 +62,7 @@ import java.net.*;
 		private final Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
 	//	private final jdk.internal.instrumentation.Logger logger = LoggerFactory.getLogger(GameStateValueBehaviour.class);
 	
-		private IGameStateHeuristic heuristic;
+		private static IGameStateHeuristic heuristic;
 		private FeatureVector featureVector;
 		private String nameSuffix = "";
 		private boolean waitingForInput;
@@ -77,7 +79,7 @@ import java.net.*;
 			this.heuristic = new ThreatBasedHeuristic(featureVector);
 		}
 	
-		private double alphaBeta(GameContext context, int playerId, GameAction action, int depth) {
+		public static double alphaBeta(GameContext context, int playerId, GameAction action, int depth) {
 			GameContext simulation = context.clone();
 			simulation.getLogic().performGameAction(playerId, action);
 			if (depth == 0 || simulation.getActivePlayerId() != playerId || simulation.gameDecided()) {
@@ -144,7 +146,17 @@ import java.net.*;
 			}
 	
 			GameAction bestAction = validActions.get(0); //these were all 0
-			GameAction secondAction = validActions.get(1);
+			
+		double bestScore = Double.NEGATIVE_INFINITY;
+
+		for (GameAction gameAction : validActions) {
+			double score = alphaBeta(context, player.getId(), gameAction, depth);
+			if (score > bestScore) {
+				bestAction = gameAction;
+				bestScore = score;
+			}
+		}
+		/*	GameAction secondAction = validActions.get(1);
 			GameAction thirdAction = validActions.get(1);
 			GameAction fourthAction = validActions.get(1);
 			GameAction fifthAction = validActions.get(1);
@@ -210,9 +222,9 @@ import java.net.*;
 					fifthAction = gameAction;
 					fifthScore = score;
 				}
-			}
+			}*/
 
-			System.out.println("Best action is " + bestAction + "\n");
+			/*System.out.println("Best action is " + bestAction + "\n");
 			printExplanation(context,player,bestAction);
 			System.out.println("Alternative action 1 is " + secondAction + "\n");
 			printExplanation(context,player,secondAction);
@@ -221,7 +233,7 @@ import java.net.*;
 			System.out.println("Alternative action 3 is " + fourthAction + "\n");
 			printExplanation(context,player,fourthAction);
 			System.out.println("Alternative action 4 is " + fifthAction + "\n");
-			printExplanation(context,player,fifthAction);
+			printExplanation(context,player,fifthAction);*/
 
 		
 			
@@ -252,9 +264,9 @@ import java.net.*;
 
 			
 		
-/*
+
 			try{
-				ServerSocket srvr = new ServerSocket(1234);
+				ServerSocket srvr = new ServerSocket(5555);
 				Socket skt = srvr.accept();
 				System.out.print("Server has connected!\n");
 				PrintWriter out = new PrintWriter(skt.getOutputStream(),true);
@@ -265,12 +277,15 @@ import java.net.*;
 			}
 			catch(Exception e){
 				//System.out.print("Error\n");
-			}*/
+			}
 	
 			return bestAction;
+
+			//HumanBehavior behavior;
+
 			/*waitingForInput = true;
 			HumanActionOptions options = new HumanActionOptions(this, context, player, validActions);
-			NotificationProxy.sendNotification(GameNotification.HUMAN_PROMPT_FOR_ACTION);
+			NotificationProxy.sendNotification(GameNotification.HUMAN_PROMPT_FOR_ACTION,options);
 			while (waitingForInput) {
 				try {
 					Thread.sleep(BuildConfig.DEFAULT_SLEEP_DELAY);
